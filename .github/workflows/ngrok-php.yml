@@ -1,10 +1,10 @@
-name: Serve VPN API with PHP + Ngrok
+name: Serve VPN API with PHP + ngrok
 
 on:
   workflow_dispatch:
 
 jobs:
-  serve-php-ngrok:
+  serve-php:
     runs-on: ubuntu-latest
 
     steps:
@@ -22,14 +22,14 @@ jobs:
           composer install --no-progress --prefer-dist || true
         fi
 
-    - name: Install jq (for JSON parsing)
+    - name: Install jq (JSON parser)
       run: sudo apt-get install jq -y
 
-    - name: Start PHP built-in server
+    - name: Start PHP server
       run: |
-        nohup php -S 127.0.0.1:8000 -t public > server.log 2>&1 &
+        nohup php -S 127.0.0.1:8000 -t . > server.log 2>&1 &
 
-    - name: Download and start ngrok
+    - name: Download and start ngrok tunnel
       run: |
         wget https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-linux-amd64.zip
         unzip ngrok-stable-linux-amd64.zip
@@ -37,8 +37,8 @@ jobs:
         nohup ./ngrok http 8000 > ngrok.log 2>&1 &
         sleep 10
         curl http://127.0.0.1:4040/api/tunnels > tunnels.json
-        echo "🔗 Public ngrok URL:"
+        echo "🔗 Public URL:"
         cat tunnels.json | jq -r '.tunnels[0].public_url'
 
-    - name: Keep the server alive
+    - name: Keep server alive for 1 hour
       run: sleep 3600
