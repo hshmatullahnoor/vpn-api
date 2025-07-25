@@ -1,38 +1,44 @@
-name: VPN API with PHP + ngrok
+name: Serve VPN API with PHP + Ngrok
 
 on:
-  workflow_dispatch:  # اجرا به صورت دستی
+  workflow_dispatch:
 
 jobs:
-  run-server:
+  serve-php-ngrok:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout the code
-      uses: actions/checkout@v3
+    - name: Checkout code
+      uses: actions/checkout@v4
 
     - name: Setup PHP
       uses: shivammathur/setup-php@v2
       with:
-        php-version: '8.1'
+        php-version: '8.2'
+
+    - name: Install composer dependencies
+      run: |
+        if [ -f "composer.json" ]; then
+          composer install --no-progress --prefer-dist || true
+        fi
+
+    - name: Install jq (for JSON parsing)
+      run: sudo apt-get install jq -y
 
     - name: Start PHP built-in server
       run: |
-        nohup php -S 127.0.0.1:8000 -t . > output.log 2>&1 &
+        nohup php -S 127.0.0.1:8000 -t public > server.log 2>&1 &
 
-    - name: Download ngrok
+    - name: Download and start ngrok
       run: |
         wget https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-linux-amd64.zip
         unzip ngrok-stable-linux-amd64.zip
         chmod +x ngrok
-
-    - name: Start ngrok tunnel
-      run: |
         nohup ./ngrok http 8000 > ngrok.log 2>&1 &
         sleep 10
         curl http://127.0.0.1:4040/api/tunnels > tunnels.json
-        echo "🔗 Public URL:"
+        echo "🔗 Public ngrok URL:"
         cat tunnels.json | jq -r '.tunnels[0].public_url'
 
-    - name: Keep server running
-      run: sleep 3600  # 1 ساعت آنلاین می‌مونه (میتونی عدد رو بیشتر کنی)
+    - name: Keep the server alive
+      run: sleep 3600
