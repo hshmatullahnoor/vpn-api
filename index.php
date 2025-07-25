@@ -9,30 +9,32 @@ $config = require 'config.php';
 
 $api = new OutlineVpnApi('https://api.getoutlinevpn.com', $config['api_token']);
 
-// Register a new user
-$ch = curl_init('http://localhost/register.php');
-curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($ch, CURLOPT_POST, true);
-curl_setopt($ch, CURLOPT_POSTFIELDS, [
-    'email' => 'test@example.com',
-    'password' => 'password',
-    'name' => 'Test User',
-    'region' => 'other',
-]);
+$action = null;
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    $action = $_GET['action'] ?? null;
+} elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $action = $_POST['action'] ?? null;
+}
 
-$response = curl_exec($ch);
-curl_close($ch);
-print_r($response);
-
-// Login with the new user
-$ch = curl_init('http://localhost/login.php');
-curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($ch, CURLOPT_POST, true);
-curl_setopt($ch, CURLOPT_POSTFIELDS, [
-    'email' => 'test@example.com',
-    'password' => 'password',
-]);
-
-$response = curl_exec($ch);
-curl_close($ch);
-print_r($response);
+switch ($action) {
+    case 'register':
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            require_once 'actions/register.php';
+        } else {
+            http_response_code(405);
+            echo json_encode(['error' => 'Method Not Allowed']);
+        }
+        break;
+    case 'login':
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            require_once 'actions/login.php';
+        } else {
+            http_response_code(405);
+            echo json_encode(['error' => 'Method Not Allowed']);
+        }
+        break;
+    default:
+        http_response_code(404);
+        echo json_encode(['error' => 'Not Found']);
+        break;
+}
